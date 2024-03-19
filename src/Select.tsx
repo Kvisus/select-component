@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "./select.module.css";
 export type SelectOption = {
   label: string;
@@ -30,17 +30,21 @@ const Select = ({ multiple, value, onChange, options }: SelectProps) => {
     multiple ? onChange([]) : onChange(undefined);
   };
 
-  const selectOption = (option: SelectOption) => {
-    if (multiple) {
-      if (value.includes(option)) {
-        onChange(value.filter((o) => o !== option));
+  //memoisation to prevent re-rendering
+  const selectOption = useCallback(
+    (option: SelectOption) => {
+      if (multiple) {
+        if (value.includes(option)) {
+          onChange(value.filter((o) => o !== option));
+        } else {
+          onChange([...value, option]);
+        }
       } else {
-        onChange([...value, option]);
+        if (option !== value) onChange(option);
       }
-    } else {
-      if (option !== value) onChange(option);
-    }
-  };
+    },
+    [multiple, value, onChange]
+  );
 
   const isOptionSelected = (option: SelectOption) => {
     return multiple ? value.includes(option) : option === value;
@@ -88,7 +92,7 @@ const Select = ({ multiple, value, onChange, options }: SelectProps) => {
     return () => {
       container?.removeEventListener("keydown", handler);
     };
-  }, [isOpen, highlightedIndex, options]);
+  }, [isOpen, highlightedIndex, options, selectOption]);
 
   return (
     <div
